@@ -84,10 +84,9 @@ class Canvas( QFrame ):
         if( self.model.is_game_over ):
             font = QFont( "Arial" )
             font.setPointSize( 80 )
+            painter.setPen( QPen( QColor( 0, 190, 0 ), 20 ) )
             painter.drawText( QRectF( 0, 0, FIELD_WIDTH * TILE_SIZE, FIELD_HEIGHT * TILE_SIZE ), Qt.AlignCenter | Qt.AlignTop ,
               str("Puzzle solved!"))
-
-
 
 if __name__ == '__main__':
     app = QApplication([])

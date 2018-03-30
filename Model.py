@@ -20,17 +20,27 @@ class Directions( Enum ):
     UP = Direction( 0, -1 )
     DOWN = Direction( 0, 1 )
 
+def get_opposite_direction( direction ):
+    if( direction == Directions.LEFT ):
+        return Directions.RIGHT
+    elif( direction == Directions.RIGHT ):
+        return Directions.LEFT
+    elif( direction == Directions.UP ):
+        return Directions.DOWN
+    elif( direction == Directions.DOWN ):
+        return Directions.UP
+
 class Model:
     def __init__( self, width, height, tile_size ):
         self.field_width = width
         self.field_height = height
         self.tile_size = tile_size
         self.grid = self.__create_grid()
-        self.print_grid()
+        #self.print_grid()
         if( not self.__is_solveable_( self.grid ) ):
-            print("Not solveable")
+            #print("Not solveable")
             self.__make_solveable_()
-            self.print_grid()
+            #self.print_grid()
         self.zero_tile = self.grid[ len( self.grid ) - 1 ]
         self.selected_tile = None
         self.all_directions = [ Directions.LEFT, Directions.RIGHT,
@@ -79,20 +89,16 @@ class Model:
             for j in range( i ):
                 if(grid[j].value > grid[i].value):
                     chaos_number += 1
-        print("Chaos number = ", chaos_number)
+        #print("Chaos number = ", chaos_number)
         return chaos_number % 2 == 0
 
     def __is_solved_( self ):
-        print("CheckGameOver")
         for tile in self.grid:
             value = tile.value
             if value != 0:
                 x = ( int(value - 1) % self.field_width ) * self.tile_size
                 y = int( int(value - 1) / self.field_width ) * self.tile_size
                 if( tile.x != x or tile.y != y ):
-                    print( "value = ", value )
-                    print( "x_expected = ", x, " y_expected = ", y )
-                    print( "x_fact = ", tile.x, " y_fact = ", tile.y )
                     return False
             else:
                 if( tile.x != ( self.field_width - 1 ) * self.tile_size or tile.y != ( self.field_height - 1 ) * self.tile_size ):
@@ -115,7 +121,7 @@ class Model:
                 neighbour_y = y + dir.dy * self.tile_size
                 if self.zero_tile.x == neighbour_x and self.zero_tile.y == neighbour_y:
                     self.animation_direction = dir
-                    print(self.animation_direction)
+                    #print(self.animation_direction)
                     self.selected_tile.destX = neighbour_x
                     self.selected_tile.destY = neighbour_y
                     self.zero_tile.x = self.selected_tile.x
@@ -126,16 +132,17 @@ class Model:
 
     def try_to_slide_in_direction( self, direciton ):
         if self.selected_tile is None :
-            neighbour_x = self.zero_tile.x + direciton.dx * self.tile_size
-            neighbour_y = self.zero_tile.y + direciton.dy * self.tile_size
+            opposit_dir = get_opposite_direction( direciton )
+            neighbour_x = self.zero_tile.x + opposit_dir.dx * self.tile_size
+            neighbour_y = self.zero_tile.y + opposit_dir.dy * self.tile_size
             self.selected_tile = self.__find_tile_by_coords_( neighbour_x, neighbour_y)
             if not self.selected_tile is None:
-                self.animation_direction = direction
-                print(self.animation_direction)
-                self.selected_tile.destX = neighbour_x
-                self.selected_tile.destY = neighbour_y
-                self.zero_tile.x = self.selected_tile.x
-                self.zero_tile.y = self.selected_tile.y
+                self.animation_direction = direciton
+                #print(self.animation_direction)
+                self.selected_tile.destX = self.zero_tile.x
+                self.selected_tile.destY = self.zero_tile.y
+                self.zero_tile.x = neighbour_x
+                self.zero_tile.y = neighbour_y
                 self.move_count += 1
 
     def tick( self ):
@@ -145,9 +152,6 @@ class Model:
             if not self.selected_tile.is_moving() :
                 self.selected_tile = None
                 self.is_game_over = self.__is_solved_()
-                if self.is_game_over :
-                    print("Puzzle solved")
-                self.print_grid()
 
     def print_grid( self ):
         for i in range( self.field_height ):
