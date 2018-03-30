@@ -8,6 +8,7 @@ TITLE_OF_PROGRAM= "TePyQtFifteenPuzzle"
 TILE_SIZE = 100
 FIELD_WIDTH = 4
 FIELD_HEIGHT = 4
+TIMER_DELAY = 34 #ms
 WINDOW_WIDTH = FIELD_WIDTH * TILE_SIZE
 WINDOW_HEIGHT = FIELD_HEIGHT * TILE_SIZE
 
@@ -37,18 +38,35 @@ class Canvas( QFrame ):
     def __init__( self, parent = None):
         super().__init__( parent )
         self.setFocusPolicy( Qt.StrongFocus )
-        self.model = Model( 4, 4 )
+        self.model = Model( FIELD_WIDTH, FIELD_HEIGHT, TILE_SIZE )
+        self.timer = QBasicTimer()
+        self.timer.start( TIMER_DELAY, self )
 
     def keyPressEvent( self, event ):
-        pass
+        key = event.key()
+        if key == Qt.Key_Space:
+            self.model.reset()
+            self.parent().setWindowTitle(TITLE_OF_PROGRAM)
+            self.update()
+        elif key == Qt.Key_Left or key == Qt.Key_A:
+            self.model.try_to_slide_in_direction( Directions.LEFT )
+        elif key == Qt.Key_Up or key == Qt.Key_W:
+            self.model.try_to_slide_in_direction( Directions.UP )
+        elif key == Qt.Key_Right or key == Qt.Key_D:
+            self.model.try_to_slide_in_direction( Directions.RIGHT )
+        elif key == Qt.Key_Down or key == Qt.Key_S:
+            self.model.try_to_slide_in_direction( Directions.DOWN )
 
     def mouseReleaseEvent( self, event ):
-        x = int( event.x() / TILE_SIZE )
-        y = int( event.y() / TILE_SIZE )
-        print( x, y )
+        x = int(event.x() / TILE_SIZE) * TILE_SIZE
+        y = int(event.y() / TILE_SIZE) * TILE_SIZE
+        self.model.try_to_slide( x, y )
 
     def timerEvent( self, event ):
-        pass
+        if event.timerId() == self.timer.timerId():
+            self.model.tick()
+            self.parent().setWindowTitle(TITLE_OF_PROGRAM + ": "+ str(self.model.move_count))
+            self.update()
 
     def paintEvent( self, event ):
         painter = QPainter( self )
@@ -58,33 +76,18 @@ class Canvas( QFrame ):
         painter.setFont( font )
         for tile in self.model.grid:
             if( tile.value != 0):
-                painter.setPen(QPen( QColor( 200, 200, 200 ), 5))
-                painter.drawRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE,
-                TILE_SIZE, TILE_SIZE)
                 painter.setBrush( color )
-                painter.fillRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE,
-                TILE_SIZE, TILE_SIZE, color)
+                painter.fillRect( tile.x + 2, tile.y + 2, TILE_SIZE - 2, TILE_SIZE - 2, color)
                 painter.setPen(QPen( QColor( 0, 0, 0 ), 5))
-                painter.drawText( QRectF( tile.x * TILE_SIZE, tile.y * TILE_SIZE,
-                 TILE_SIZE, TILE_SIZE ), Qt.AlignCenter | Qt.AlignTop ,
+                painter.drawText( QRectF( tile.x, tile.y, TILE_SIZE, TILE_SIZE ), Qt.AlignCenter | Qt.AlignTop ,
                   str(tile.value))
+        if( self.model.is_game_over ):
+            font = QFont( "Arial" )
+            font.setPointSize( 80 )
+            painter.drawText( QRectF( 0, 0, FIELD_WIDTH * TILE_SIZE, FIELD_HEIGHT * TILE_SIZE ), Qt.AlignCenter | Qt.AlignTop ,
+              str("Puzzle solved!"))
 
-"""
-colors={
-0:'#2c3e50',
-2:'#1abc9c',
-4:'#2ecc71',
-8:'#27a60',
-16:'#3498db',
-32:'#9b59b6',
-64:'#f1c40f',
-128:'#f39c12',
-256:'#e67e22',
-512:'#d35400',
-1024:'#e74c3c',
-2048:'#c0392b'
-}
-"""
+
 
 if __name__ == '__main__':
     app = QApplication([])
